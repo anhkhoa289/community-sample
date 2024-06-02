@@ -56,11 +56,11 @@ resource "aws_elastic_beanstalk_application" "zerus_app" {
   description = "zerus-app"
 }
 
-resource "aws_elastic_beanstalk_configuration_template" "zerus_docker_app_template" {
-  name                = "zerus-docker-app-template"
+resource "aws_elastic_beanstalk_configuration_template" "zerus_php_app_template" {
+  name                = "zerus-php-app-template"
   application         = aws_elastic_beanstalk_application.zerus_app.name
   # https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/concepts.platforms.html
-  solution_stack_name = "64bit Amazon Linux 2023 v4.3.2 running Docker"
+  solution_stack_name = "64bit Amazon Linux 2023 v4.1.3 running PHP 8.2"
 
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
@@ -107,65 +107,66 @@ resource "aws_elastic_beanstalk_configuration_template" "zerus_docker_app_templa
 
 
 
+
 locals {
-  zerus_app_version_name = "zerus-docker-app-v1"
+  zerus_app_version_name = "zerus-php-app-v1"
 }
 
 resource "aws_s3_bucket" "app_bucket" {
   bucket = "zerus-app-version"
 }
 
-data "archive_file" "dockerzip" {
+data "archive_file" "phpzhip" {
   type        = "zip"
-  source_dir = "docker"
-  output_path = "docker.zip"
+  source_dir = "php"
+  output_path = "php.zip"
 }
 
-resource "aws_s3_object" "dockerzip_object" {
+resource "aws_s3_object" "phpzhip_object" {
   bucket        = aws_s3_bucket.app_bucket.id
   key           = "beanstalk/docker.zip"
-  source        = data.archive_file.dockerzip.output_path
-  etag          = data.archive_file.dockerzip.output_md5
+  source        = data.archive_file.phpzhip.output_path
+  etag          = data.archive_file.phpzhip.output_md5
   force_destroy = true
 }
 
-resource "aws_elastic_beanstalk_application_version" "zerus_docker_app_v1" {
+resource "aws_elastic_beanstalk_application_version" "zerus_php_app_v1" {
   name        = local.zerus_app_version_name
   application = aws_elastic_beanstalk_application.zerus_app.name
   description = "application version created by terraform"
   bucket      = aws_s3_bucket.app_bucket.id
-  key         = aws_s3_object.dockerzip_object.id
+  key         = aws_s3_object.phpzhip_object.id
 
   depends_on = [
     aws_elastic_beanstalk_application.zerus_app,
-    aws_s3_object.dockerzip_object
+    aws_s3_object.phpzhip_object
   ]
 }
 
-resource "aws_elastic_beanstalk_environment" "zerus_docker_app_dev" {
-  name                   = "zerus-docker-app-dev"
+
+resource "aws_elastic_beanstalk_environment" "zerus_php_app_dev" {
+  name                   = "zerus-php-app-dev"
   application            = aws_elastic_beanstalk_application.zerus_app.name
-  template_name          = aws_elastic_beanstalk_configuration_template.zerus_docker_app_template.name
+  template_name          = aws_elastic_beanstalk_configuration_template.zerus_php_app_template.name
 
   version_label          = local.zerus_app_version_name
   wait_for_ready_timeout = "20m"
   depends_on = [
-    aws_elastic_beanstalk_configuration_template.zerus_docker_app_template,
-    aws_elastic_beanstalk_application_version.zerus_docker_v1,
+    aws_elastic_beanstalk_configuration_template.zerus_php_app_template,
   ]
 }
 
-output zerus_docker_app_dev_endpoint {
-  value       = aws_elastic_beanstalk_environment.zerus_docker_app_dev.endpoint_url
-  description = "Zerus App Dev Endpoint URL"
+output zerus_php_app_dev_endpoint {
+  value       = aws_elastic_beanstalk_environment.zerus_php_app_dev.endpoint_url
+  description = "Zerus PHP App Dev Endpoint URL"
   depends_on  = [
-    aws_elastic_beanstalk_environment.zerus_docker_app_dev
+    aws_elastic_beanstalk_environment.zerus_php_app_dev
   ]
 }
-output zerus_docker_app_dev_cname  {
-  value       = aws_elastic_beanstalk_environment.zerus_docker_app_dev.cname
-  description = "Zerus App Dev CNAME"
+output zerus_php_app_dev_cname  {
+  value       = aws_elastic_beanstalk_environment.zerus_php_app_dev.cname
+  description = "Zerus PHP App Dev CNAME"
   depends_on  = [
-    aws_elastic_beanstalk_environment.zerus_docker_app_dev
+    aws_elastic_beanstalk_environment.zerus_php_app_dev
   ]
 }
