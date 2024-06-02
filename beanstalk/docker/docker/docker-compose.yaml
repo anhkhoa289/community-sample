@@ -1,0 +1,6 @@
+version: '3.8'
+services:
+  web:
+    image: traefik/whoami
+    ports:
+      - 80:80
