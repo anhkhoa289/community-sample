@@ -2,6 +2,7 @@
 
 - Docker
 - Terraform
+- EB CLI
 
 ## How to run
 
