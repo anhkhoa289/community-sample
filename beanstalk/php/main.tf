@@ -124,7 +124,7 @@ data "archive_file" "phpzhip" {
 
 resource "aws_s3_object" "phpzhip_object" {
   bucket        = aws_s3_bucket.app_bucket.id
-  key           = "beanstalk/docker.zip"
+  key           = "beanstalk/php.zip"
   source        = data.archive_file.phpzhip.output_path
   etag          = data.archive_file.phpzhip.output_md5
   force_destroy = true
